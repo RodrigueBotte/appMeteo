@@ -13,25 +13,43 @@ const fond = require("../../assets/images/meteo.jpg");
 
 export default function HomeScreen() {
   const [weatherData, setWeatherData] = useState<any>(null);
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
+  // const [location, setLocation] = useState<Location.LocationObject | null>(null);
 
   // Récupération de la meteo
+  // const getWeatherData = async (latitude: number, longitude: number) => {
+  //   try {
+  //     const response = await fetch(
+  //       `https://api.openmeteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation&timezone=auto`
+  //     );
+  //     const data = await response.json();
+  //     setWeatherData(data);
+  //   } catch (error) {
+  //     console.error(
+  //       "Erreur lors de la récupération des données meteo: ",
+  //       error
+  //     );
+  //   }
+  // };
   const getWeatherData = async (latitude: number, longitude: number) => {
+  try {
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation&timezone=auto`
+    );
+
+    const text = await response.text(); // <- on lit la réponse brute
+    console.log("Réponse brute :", text);
+
     try {
-      const response = await fetch(
-        `https://api.openmeteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation&timezone=auto`
-      );
-      const data = await response.json();
+      const data = JSON.parse(text); // on tente de parser manuellement
       setWeatherData(data);
-    } catch (error) {
-      console.error(
-        "Erreur lors de la récupération des données meteo: ",
-        error
-      );
+    } catch (jsonError) {
+      console.error("La réponse n’est pas du JSON, c’est probablement du HTML (Tunnel) :", text.substring(0, 200));
     }
-  };
+  } catch (error) {
+    console.error("Erreur lors de la récupération des données meteo: ", error);
+  }
+};
+
 
   const getLocation = useCallback(async () => {
     try {
@@ -41,7 +59,6 @@ export default function HomeScreen() {
         return;
       }
       let location = await Location.getCurrentPositionAsync();
-      setLocation(location);
 
       // appel de l'api meteo
       getWeatherData(location.coords.latitude, location.coords.longitude);
